@@ -2,6 +2,9 @@
 // Use of this source code is governed by an Apache license that can be found
 // in the LICENSE file.
 
+import 'dart:io';
+
+import 'package:common/beans/MediaDto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -36,18 +39,35 @@ class AssetPicker<Asset, Path> extends StatefulWidget {
   }
 
   /// {@macro wechat_assets_picker.delegates.AssetPickerDelegate.pickAssets}
-  static Future<List<AssetEntity>?> pickAssets(
+  static Future<List<MediaEntity>?> pickAssets(
     BuildContext context, {
     AssetPickerConfig pickerConfig = const AssetPickerConfig(),
     bool useRootNavigator = true,
     AssetPickerPageRouteBuilder<List<AssetEntity>>? pageRouteBuilder,
-  }) {
-    return _pickerDelegate.pickAssets(
+  }) async {
+    final List<AssetEntity>? list = await _pickerDelegate.pickAssets(
       context,
       pickerConfig: pickerConfig,
       useRootNavigator: useRootNavigator,
       pageRouteBuilder: pageRouteBuilder,
     );
+    final List<MediaEntity> lme = [];
+    if (list != null && list.isNotEmpty) {
+      for (final AssetEntity ae in list) {
+        final File? file = await ae.originFile;
+        if (file != null) {
+          lme.add(
+            MediaEntity(
+              file,
+              ae.duration == 0
+                  ? CameraPickerViewType.image
+                  : CameraPickerViewType.video,
+            ),
+          );
+        }
+      }
+    }
+    return lme;
   }
 
   /// {@macro wechat_assets_picker.delegates.AssetPickerDelegate.pickAssetsWithDelegate}
